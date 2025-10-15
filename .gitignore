@@ -1,0 +1,6 @@
+.kiro
+.env
+.venv
+.idea
+.pytest_cache
+.vscode
