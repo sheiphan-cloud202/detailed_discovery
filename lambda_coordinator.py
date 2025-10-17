@@ -5,6 +5,23 @@ import boto3
 from datetime import datetime
 
 
+def extract_company_name(res: dict) -> str:
+    """Extract company name from report result, handling different return structures"""
+    if not res or not isinstance(res, dict):
+        return 'customer'
+    
+    # Check direct company_name (compliance reports)
+    if res.get('company_name'):
+        return res['company_name']
+    
+    # Check nested in meta (executive and technical reports)
+    meta = res.get('meta', {})
+    if isinstance(meta, dict) and meta.get('company_name'):
+        return meta['company_name']
+    
+    return 'customer'
+
+
 def handler(event, context):
     """
     Coordinator Lambda with Function URL support.
@@ -109,12 +126,14 @@ def handler(event, context):
                 # Legacy s3 field for backward compatibility (executive report)
                 legacy_s3 = next((r for r in updated_reports if r.get('type') == 'executive'), None)
                 
-                # Extract company name and job folder path
+                # Extract company name and job folder path using consistent extraction
                 company_name = None
                 for res in (metadata.values() if metadata else []):
-                    if res and isinstance(res, dict) and res.get('company_name'):
-                        company_name = res['company_name']
-                        break
+                    if res and isinstance(res, dict):
+                        extracted_name = extract_company_name(res)
+                        if extracted_name != 'customer':
+                            company_name = extracted_name
+                            break
                 
                 safe_company = ''.join(c if c.isalnum() or c in '-_' else '_' for c in (company_name or 'customer').lower())
                 s3_folder_path = f"reports/{safe_company}/{job_id}/"

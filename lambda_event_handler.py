@@ -5,11 +5,18 @@ import os
 import json
 import base64
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 import boto3
 from datetime import datetime
 import uuid
 
-from src.report_labs_executive import Cloud202ExecutiveReportGenerator
+# Ensure project root and src are importable
+PROJECT_ROOT = Path(__file__).resolve().parent
+SRC_DIR = PROJECT_ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 
 def handler(event, context):
@@ -67,12 +74,69 @@ def handler(event, context):
     with open(input_json_path, "w", encoding="utf-8") as f:
         json.dump(event, f, ensure_ascii=False)
 
-    # Generate all three reports
-    combined_results = Cloud202ExecutiveReportGenerator.generate_all_reports(input_json_path, force_compliance=True)
+    # Import runner lazily after sys.path setup to satisfy linter and path requirements
+    from src.run_parallel import run_executive, run_technical, run_compliance
+
+    # Generate all three reports in parallel using the shared runner
+    def _normalize_result(res) -> dict:
+        if not res or res.status != "success":
+            return {}
+        base = res.extra if isinstance(res.extra, dict) else {}
+        pdf_path = base.get('pdf_path') or base.get('output_path') or res.output_path
+        if pdf_path:
+            base['pdf_path'] = pdf_path
+        # Preserve company_name and other metadata from the report result
+        if hasattr(res, 'extra') and isinstance(res.extra, dict):
+            for key in ['company_name', 'industry', 'timestamp']:
+                if key in res.extra:
+                    base[key] = res.extra[key]
+        return base
+
+    futures = {}
+    combined_results = {"executive": {}, "technical": {}, "compliance": {}}
+    try:
+        with ThreadPoolExecutor(max_workers=3) as ex:
+            futures["executive"] = ex.submit(run_executive, input_json_path)
+            futures["technical"] = ex.submit(run_technical, input_json_path)
+            futures["compliance"] = ex.submit(lambda p: run_compliance(p, force=True), input_json_path)
+
+            for name, fut in futures.items():
+                try:
+                    res = fut.result()
+                    combined_results[name] = _normalize_result(res)
+                except Exception:
+                    # Preserve graceful degradation - leave empty dict for failures
+                    combined_results[name] = {}
+    except Exception:
+        # If runner setup failed entirely, keep structure and proceed with empty results
+        pass
+
+    # Helper to extract company name consistently from all report types
+    def extract_company_name(res: dict) -> str:
+        """Extract company name from report result, handling different return structures"""
+        if not res or not isinstance(res, dict):
+            return 'customer'
+        
+        # Check direct company_name (compliance reports)
+        if res.get('company_name'):
+            return res['company_name']
+        
+        # Check nested in meta (executive and technical reports)
+        meta = res.get('meta', {})
+        if isinstance(meta, dict) and meta.get('company_name'):
+            return meta['company_name']
+        
+        return 'customer'
 
     # Helper to upload and presign - organizes by job_id
     def upload_and_presign(local_path: str, company: str, report_type: str) -> dict:
-        if not local_path or not Path(local_path).exists():
+        if not local_path:
+            return {}
+        # Resolve relative paths against current working directory (Lambda uses /tmp)
+        p = Path(local_path)
+        if not p.is_absolute():
+            p = Path.cwd() / p
+        if not p.exists():
             return {}
         s3_client = boto3.client('s3', region_name=AWS_REGION)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -85,7 +149,7 @@ def handler(event, context):
         encryption_params = {'ServerSideEncryption': SSE_MODE}
         if SSE_MODE == 'aws:kms' and SSE_KMS_KEY_ID:
             encryption_params['SSEKMSKeyId'] = SSE_KMS_KEY_ID
-        with open(local_path, 'rb') as f:
+        with open(p, 'rb') as f:
             s3_client.upload_fileobj(f, BUCKET_NAME, key, ExtraArgs=encryption_params)
         url = s3_client.generate_presigned_url('get_object', Params={'Bucket': BUCKET_NAME, 'Key': key}, ExpiresIn=PRESIGN_EXPIRES_SECS)
         return {"bucket": BUCKET_NAME, "key": key, "presigned_url": url, "expires_in_seconds": PRESIGN_EXPIRES_SECS}
@@ -97,7 +161,9 @@ def handler(event, context):
     for rtype in ["executive", "technical", "compliance"]:
         res = combined_results.get(rtype) or {}
         try:
-            upload_info = upload_and_presign(res.get('pdf_path'), res.get('company_name'), rtype) if res else {}
+            pdf_candidate = res.get('pdf_path') or res.get('output_path')
+            company_name = extract_company_name(res)
+            upload_info = upload_and_presign(pdf_candidate, company_name, rtype) if res else {}
             if upload_info:
                 s3_reports.append({"type": rtype, **upload_info})
             else:
@@ -147,12 +213,14 @@ def handler(event, context):
             }),
         }
 
-    # Extract company name for folder path info
+    # Extract company name for folder path info using consistent extraction
     company_name = None
     for res in combined_results.values():
-        if res and isinstance(res, dict) and res.get('company_name'):
-            company_name = res['company_name']
-            break
+        if res and isinstance(res, dict):
+            extracted_name = extract_company_name(res)
+            if extracted_name != 'customer':
+                company_name = extracted_name
+                break
     safe_company_name = ''.join(c if c.isalnum() or c in '-_' else '_' for c in (company_name or 'customer').lower())
     s3_folder_path = f"{S3_PREFIX}{safe_company_name}/{job_id}/"
     

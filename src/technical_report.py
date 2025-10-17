@@ -131,82 +131,82 @@ class Cloud202TechnicalDeepDiveGenerator:
 
         prompt = f"""You are a senior Cloud202 Solutions Architect drafting a TECHNICAL IMPLEMENTATION DEEP-DIVE report.
 
-COMPANY: {company_name}
-INDUSTRY: {industry}
-ASSESSMENT DATA:
-{json.dumps(processed_data, indent=2)}
+                COMPANY: {company_name}
+                INDUSTRY: {industry}
+                ASSESSMENT DATA:
+                {json.dumps(processed_data, indent=2)}
 
-Generate a comprehensive technical report with EXACTLY these 6 JSON keys:
-{{
-  "current_state_assessment": "...",
-  "target_architecture_design": "...",
-  "data_strategy": "...",
-  "model_evaluation_recommendations": "...",
-  "implementation_plan": "...",
-  "integration_and_operations": "..."
-}}
+                Generate a comprehensive technical report with EXACTLY these 6 JSON keys:
+                {{
+                "current_state_assessment": "...",
+                "target_architecture_design": "...",
+                "data_strategy": "...",
+                "model_evaluation_recommendations": "...",
+                "implementation_plan": "...",
+                "integration_and_operations": "..."
+                }}
 
-WORD COUNTS (strict):
-- current_state_assessment: 900–1100 words
-- target_architecture_design: 900–1100 words
-- data_strategy: 700–900 words
-- model_evaluation_recommendations: 700–900 words
-- implementation_plan: 900–1100 words
-- integration_and_operations: 800–1000 words
+                WORD COUNTS (strict):
+                - current_state_assessment: 900–1100 words
+                - target_architecture_design: 900–1100 words
+                - data_strategy: 700–900 words
+                - model_evaluation_recommendations: 700–900 words
+                - implementation_plan: 900–1100 words
+                - integration_and_operations: 800–1000 words
 
-SECTION DETAILS:
+                SECTION DETAILS:
 
-1. CURRENT STATE ASSESSMENT (900–1100 words):
-- Existing system architecture/topology, runtime, deployment model
-- Baseline performance/availability, SLOs/SLAs, capacity headroom
-- Observed bottlenecks (I/O/CPU/memory/network), failure modes, error patterns
-- Security/compliance posture, identity model, secrets, logging, audit trails
-- Environmental constraints (cost, skills, processes, vendor lock-in)
-- Include 4–6 paragraphs with crisp technical prose
+                1. CURRENT STATE ASSESSMENT (900–1100 words):
+                - Existing system architecture/topology, runtime, deployment model
+                - Baseline performance/availability, SLOs/SLAs, capacity headroom
+                - Observed bottlenecks (I/O/CPU/memory/network), failure modes, error patterns
+                - Security/compliance posture, identity model, secrets, logging, audit trails
+                - Environmental constraints (cost, skills, processes, vendor lock-in)
+                - Include 4–6 paragraphs with crisp technical prose
 
-2. TARGET ARCHITECTURE DESIGN (900–1100 words):
-- Recommended AWS reference architecture (compute, networking, storage, data)
-- Traffic flow, ALB/NLB, WAF/Shield, VPC design, SG/NACL policy
-- Data plane vs control plane, tenancy, multi-AZ, DR strategy (RTO/RPO)
-- GenAI components (Bedrock, embedding/retrieval), caching (ElastiCache), database (Aurora/RDS/DynamoDB)
-- CI/CD with IaC (Terraform), env strategy, feature flags, blue/green/canary
-- 4–6 paragraphs with specific AWS services and configurations
+                2. TARGET ARCHITECTURE DESIGN (900–1100 words):
+                - Recommended AWS reference architecture (compute, networking, storage, data)
+                - Traffic flow, ALB/NLB, WAF/Shield, VPC design, SG/NACL policy
+                - Data plane vs control plane, tenancy, multi-AZ, DR strategy (RTO/RPO)
+                - GenAI components (Bedrock, embedding/retrieval), caching (ElastiCache), database (Aurora/RDS/DynamoDB)
+                - CI/CD with IaC (Terraform), env strategy, feature flags, blue/green/canary
+                - 4–6 paragraphs with specific AWS services and configurations
 
-3. DATA STRATEGY (700–900 words):
-- Data classification, lineage, governance (Glue, Lake Formation)
-- Ingestion, quality, schema evolution, CDC, partitioning
-- Storage tiers (S3 classes), lifecycle, encryption (KMS), tokenization/pseudonymization
-- Metadata/catalog, access policies (RBAC/ABAC), data products, privacy
-- Retrieval/RAG patterns, embeddings, vector index strategy
-- 3–5 paragraphs with explicit implementation detail
+                3. DATA STRATEGY (700–900 words):
+                - Data classification, lineage, governance (Glue, Lake Formation)
+                - Ingestion, quality, schema evolution, CDC, partitioning
+                - Storage tiers (S3 classes), lifecycle, encryption (KMS), tokenization/pseudonymization
+                - Metadata/catalog, access policies (RBAC/ABAC), data products, privacy
+                - Retrieval/RAG patterns, embeddings, vector index strategy
+                - 3–5 paragraphs with explicit implementation detail
 
-4. MODEL EVALUATION RECOMMENDATIONS (700–900 words):
-- Offline/online eval, golden sets, regression gates, eval harness
-- Hallucination checks, safety/guardrails, prompt/response policies
-- Human-in-the-loop, A/B testing, acceptance criteria, SLI/SLO for quality
-- Cost/perf tradeoffs, caching strategies, failure isolation
-- 3–5 paragraphs, actionable and measurable
+                4. MODEL EVALUATION RECOMMENDATIONS (700–900 words):
+                - Offline/online eval, golden sets, regression gates, eval harness
+                - Hallucination checks, safety/guardrails, prompt/response policies
+                - Human-in-the-loop, A/B testing, acceptance criteria, SLI/SLO for quality
+                - Cost/perf tradeoffs, caching strategies, failure isolation
+                - 3–5 paragraphs, actionable and measurable
 
-5. IMPLEMENTATION PLAN (900–1100 words):
-- Phase 1 (Months 1–2): Foundations & baselining (environments, IaC, observability)
-- Phase 2 (Months 3–5): Core development (APIs, data pipelines, initial guardrails)
-- Phase 3 (Months 6–7): Testing/validation (load, security, UAT, perf tuning)
-- Phase 4 (Month 8): Deployment (blue/green, rollback, runbooks, DR test)
-- Phase 5 (Months 9–10): Stabilization/optimization (SRE playbooks, KT, handover)
-- Resourcing, RACI, dependency management, risks, mitigations
+                5. IMPLEMENTATION PLAN (900–1100 words):
+                - Phase 1 (Months 1–2): Foundations & baselining (environments, IaC, observability)
+                - Phase 2 (Months 3–5): Core development (APIs, data pipelines, initial guardrails)
+                - Phase 3 (Months 6–7): Testing/validation (load, security, UAT, perf tuning)
+                - Phase 4 (Month 8): Deployment (blue/green, rollback, runbooks, DR test)
+                - Phase 5 (Months 9–10): Stabilization/optimization (SRE playbooks, KT, handover)
+                - Resourcing, RACI, dependency management, risks, mitigations
 
-6. INTEGRATION AND OPERATIONS (800–1000 words):
-- Integration contracts (API specs, authN/Z, throttling); data exchange patterns
-- Observability stack (CloudWatch, X-Ray, metrics/alerts), SLOs & error budgets
-- Ops playbooks: incident response, change mgmt, patching, capacity
-- Performance mgmt (load profiles, autoscaling), cost mgmt (budgets/anomaly)
-- Day-2 ops: DR drills, backup/restore tests, compliance evidence capture
+                6. INTEGRATION AND OPERATIONS (800–1000 words):
+                - Integration contracts (API specs, authN/Z, throttling); data exchange patterns
+                - Observability stack (CloudWatch, X-Ray, metrics/alerts), SLOs & error budgets
+                - Ops playbooks: incident response, change mgmt, patching, capacity
+                - Performance mgmt (load profiles, autoscaling), cost mgmt (budgets/anomaly)
+                - Day-2 ops: DR drills, backup/restore tests, compliance evidence capture
 
-FORMATTING RULES:
-- Use dense technical prose; keep bullets for lists inside the JSON values
-- Include specific AWS services/configs; avoid vague statements
-- STRICT JSON ONLY in the response (no markdown, no code fences)
-"""
+                FORMATTING RULES:
+                - Use dense technical prose; keep bullets for lists inside the JSON values
+                - Include specific AWS services/configs; avoid vague statements
+                - STRICT JSON ONLY in the response (no markdown, no code fences)
+                """
         return prompt
 
     # ---------- Bedrock Invocation with Streaming ----------
@@ -289,42 +289,42 @@ FORMATTING RULES:
         return {
             "current_state_assessment": f"""CURRENT STATE ASSESSMENT
 
-{company_name} operates a mixed estate typical of {industry} workloads with legacy monoliths, point-to-point integrations,
-and limited automation. Baseline SLOs are inconsistent across tiers, and capacity headroom is constrained during peak windows.
-Observability coverage exists but lacks uniform correlation across logs/metrics/traces; incident triage is manual and reactive.
-Identity is centrally managed but privileges are coarse-grained, and secret rotation is inconsistent across services.""",
+            {company_name} operates a mixed estate typical of {industry} workloads with legacy monoliths, point-to-point integrations,
+            and limited automation. Baseline SLOs are inconsistent across tiers, and capacity headroom is constrained during peak windows.
+            Observability coverage exists but lacks uniform correlation across logs/metrics/traces; incident triage is manual and reactive.
+            Identity is centrally managed but privileges are coarse-grained, and secret rotation is inconsistent across services.""",
 
-            "target_architecture_design": """TARGET ARCHITECTURE DESIGN
+                        "target_architecture_design": """TARGET ARCHITECTURE DESIGN
 
-Recommended blueprint: multi-AZ VPC, private subnets, ALB fronting ECS/Fargate services, Aurora PostgreSQL with read replicas,
-S3 data lake (prefix+partition design), ElastiCache (Redis) for hot paths, and Bedrock for GenAI workloads. CI/CD via Terraform,
-pipelines with policy-as-code and environment promotions; WAF/Shield at the edge; centralized KMS keys and CloudTrail/Lake
-for audit. DR uses cross-AZ plus periodic cross-Region backups with documented RTO/RPO.""",
+            Recommended blueprint: multi-AZ VPC, private subnets, ALB fronting ECS/Fargate services, Aurora PostgreSQL with read replicas,
+            S3 data lake (prefix+partition design), ElastiCache (Redis) for hot paths, and Bedrock for GenAI workloads. CI/CD via Terraform,
+            pipelines with policy-as-code and environment promotions; WAF/Shield at the edge; centralized KMS keys and CloudTrail/Lake
+            for audit. DR uses cross-AZ plus periodic cross-Region backups with documented RTO/RPO.""",
 
-            "data_strategy": """DATA STRATEGY
+                        "data_strategy": """DATA STRATEGY
 
-Ingest via event streams and batch pipelines; schema control with Glue Catalog and Lake Formation. Data classification
-(Restricted/Confidential/Internal/Public) governs RBAC/ABAC policies. Storage tiering uses S3 Standard → IA → Glacier with
-lifecycle transitions. Encryption everywhere with KMS; tokenization for sensitive fields; metadata capture for lineage; RAG
-retrieval patterns with curated embeddings and vector index separation by tenancy.""",
+            Ingest via event streams and batch pipelines; schema control with Glue Catalog and Lake Formation. Data classification
+            (Restricted/Confidential/Internal/Public) governs RBAC/ABAC policies. Storage tiering uses S3 Standard → IA → Glacier with
+            lifecycle transitions. Encryption everywhere with KMS; tokenization for sensitive fields; metadata capture for lineage; RAG
+            retrieval patterns with curated embeddings and vector index separation by tenancy.""",
 
-            "model_evaluation_recommendations": """MODEL EVALUATION RECOMMENDATIONS
+                        "model_evaluation_recommendations": """MODEL EVALUATION RECOMMENDATIONS
 
-Adopt offline golden sets and online A/B with guardrails. Track hallucination/toxicity, latency, cost, and success metrics with
-SLIs/SLOs. Introduce HITL review queues for high-risk classes and regression gates in CI. Cache strategies reduce cost/latency;
-error isolation via circuit breakers and fallback responders. Clear acceptance criteria and rollback signals are codified.""",
+            Adopt offline golden sets and online A/B with guardrails. Track hallucination/toxicity, latency, cost, and success metrics with
+            SLIs/SLOs. Introduce HITL review queues for high-risk classes and regression gates in CI. Cache strategies reduce cost/latency;
+            error isolation via circuit breakers and fallback responders. Clear acceptance criteria and rollback signals are codified.""",
 
-            "implementation_plan": """IMPLEMENTATION PLAN
+                        "implementation_plan": """IMPLEMENTATION PLAN
 
-Phase 1 (1–2): Foundations & baselining; envs, IaC, observability, security controls. Phase 2 (3–5): Core build (APIs, data
-pipelines, guardrails). Phase 3 (6–7): Testing (load, security, UAT, perf tuning). Phase 4 (8): Deployment (blue/green,
-rollback, DR test). Phase 5 (9–10): Stabilization, SRE playbooks, KT/handover. RACI with dependency mapping and risks/mitigations.""",
+            Phase 1 (1–2): Foundations & baselining; envs, IaC, observability, security controls. Phase 2 (3–5): Core build (APIs, data
+            pipelines, guardrails). Phase 3 (6–7): Testing (load, security, UAT, perf tuning). Phase 4 (8): Deployment (blue/green,
+            rollback, DR test). Phase 5 (9–10): Stabilization, SRE playbooks, KT/handover. RACI with dependency mapping and risks/mitigations.""",
 
-            "integration_and_operations": """INTEGRATION AND OPERATIONS
+                        "integration_and_operations": """INTEGRATION AND OPERATIONS
 
-Contracts specify authZ scopes, idempotency, and backoff. Observability: CloudWatch/X-Ray + custom metrics, unified
-dashboards, actionable alerts. Day-2 ops includes patching cadence, incident runbooks, change controls, DR drills,
-backup/restore tests, cost budgets with anomaly detection, and continuous compliance evidence capture."""
+            Contracts specify authZ scopes, idempotency, and backoff. Observability: CloudWatch/X-Ray + custom metrics, unified
+            dashboards, actionable alerts. Day-2 ops includes patching cadence, incident runbooks, change controls, DR drills,
+            backup/restore tests, cost budgets with anomaly detection, and continuous compliance evidence capture."""
         }
 
     # ---------- PDF Build (same layout primitives as compliance) ----------

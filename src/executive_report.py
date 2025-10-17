@@ -162,81 +162,81 @@ class Cloud202ExecutiveReportGenerator:
 
         prompt = f"""You are a senior Cloud202 Solutions Architect creating a comprehensive EXECUTIVE assessment report.
 
-COMPANY: {company_name}
-INDUSTRY: {industry}
-PRIMARY GOAL: {primary_goal}
-URGENCY: {urgency}
+                COMPANY: {company_name}
+                INDUSTRY: {industry}
+                PRIMARY GOAL: {primary_goal}
+                URGENCY: {urgency}
 
-ASSESSMENT DATA:
-{json.dumps(processed_data, indent=2)}
+                ASSESSMENT DATA:
+                {json.dumps(processed_data, indent=2)}
 
-Generate a detailed executive report with 6 sections. Each section should be 800-1200 words for a comprehensive 12-15 page PDF.
+                Generate a detailed executive report with 6 sections. Each section should be 800-1200 words for a comprehensive 12-15 page PDF.
 
-CRITICAL: Return ONLY valid JSON with these exact keys:
-{{
-  "executive_summary": "...",
-  "business_case_analysis": "...",
-  "technical_implementation_roadmap": "...",
-  "financial_investment_analysis": "...",
-  "risk_mitigation_strategy": "...",
-  "strategic_recommendations": "..."
-}}
+                CRITICAL: Return ONLY valid JSON with these exact keys:
+                {{
+                "executive_summary": "...",
+                "business_case_analysis": "...",
+                "technical_implementation_roadmap": "...",
+                "financial_investment_analysis": "...",
+                "risk_mitigation_strategy": "...",
+                "strategic_recommendations": "..."
+                }}
 
-SECTION REQUIREMENTS:
+                SECTION REQUIREMENTS:
 
-1. EXECUTIVE SUMMARY (1-2 pages):
-- Business context for {company_name} in {industry}
-- Problem statement: {business_problem}
-- Proposed GenAI/Cloud solution overview
-- Expected outcomes and success metrics
-- Summary ROI: {roi}, Annual Savings: {annual_savings}, Payback: {payback}
-- 4-6 structured paragraphs
+                1. EXECUTIVE SUMMARY (1-2 pages):
+                - Business context for {company_name} in {industry}
+                - Problem statement: {business_problem}
+                - Proposed GenAI/Cloud solution overview
+                - Expected outcomes and success metrics
+                - Summary ROI: {roi}, Annual Savings: {annual_savings}, Payback: {payback}
+                - 4-6 structured paragraphs
 
-2. BUSINESS CASE & VALUE PROPOSITION (2-3 pages):
-- Current state challenges and quantified impact
-- Target outcomes aligned to {primary_goal}
-- KPI tree (throughput, quality, cost, cycle time)
-- Org/people/process transformation narrative
-- Risk/benefit matrix with mitigations
-- 5-7 structured paragraphs
+                2. BUSINESS CASE & VALUE PROPOSITION (2-3 pages):
+                - Current state challenges and quantified impact
+                - Target outcomes aligned to {primary_goal}
+                - KPI tree (throughput, quality, cost, cycle time)
+                - Org/people/process transformation narrative
+                - Risk/benefit matrix with mitigations
+                - 5-7 structured paragraphs
 
-3. TECHNICAL IMPLEMENTATION ROADMAP (2-3 pages):
-- Phased plan (0-3, 4-6, 7-9, 10-12 months)
-- Data, model, integration, and platform workstreams
-- Build vs buy decisions
-- Environments and release strategy
-- Dependencies and critical path
-- 5-7 structured paragraphs
+                3. TECHNICAL IMPLEMENTATION ROADMAP (2-3 pages):
+                - Phased plan (0-3, 4-6, 7-9, 10-12 months)
+                - Data, model, integration, and platform workstreams
+                - Build vs buy decisions
+                - Environments and release strategy
+                - Dependencies and critical path
+                - 5-7 structured paragraphs
 
-4. FINANCIAL INVESTMENT ANALYSIS (2 pages):
-- Budget bands derived from {budget}
-- Opex vs Capex, unit economics
-- ROI details beyond {roi}; sensitivity analysis
-- Licensing / cloud consumption assumptions
-- 3-5 structured paragraphs with numbers
+                4. FINANCIAL INVESTMENT ANALYSIS (2 pages):
+                - Budget bands derived from {budget}
+                - Opex vs Capex, unit economics
+                - ROI details beyond {roi}; sensitivity analysis
+                - Licensing / cloud consumption assumptions
+                - 3-5 structured paragraphs with numbers
 
-5. RISK MITIGATION STRATEGY (1-2 pages):
-- Delivery, security, privacy, and change risks
-- Controls and contingency plans
-- Governance and decision cadence
-- 3-4 structured paragraphs
+                5. RISK MITIGATION STRATEGY (1-2 pages):
+                - Delivery, security, privacy, and change risks
+                - Controls and contingency plans
+                - Governance and decision cadence
+                - 3-4 structured paragraphs
 
-6. STRATEGIC RECOMMENDATIONS (1-2 pages):
-- Leadership & governance
-- Org readiness and capability model
-- Partnership strategy with Cloud202
-- Innovation & competitive positioning
-- AI CoE blueprint
-- 3-4 structured paragraphs
+                6. STRATEGIC RECOMMENDATIONS (1-2 pages):
+                - Leadership & governance
+                - Org readiness and capability model
+                - Partnership strategy with Cloud202
+                - Innovation & competitive positioning
+                - AI CoE blueprint
+                - 3-4 structured paragraphs
 
-FORMATTING RULES:
-- Professional business tone for C-level audience
-- Clear section headers (no markdown in the JSON)
-- Bullet points only when listing metrics or features
-- Provide concrete numbers, dates, and milestones
-- Total output should fit 12-15 PDF pages when rendered
+                FORMATTING RULES:
+                - Professional business tone for C-level audience
+                - Clear section headers (no markdown in the JSON)
+                - Bullet points only when listing metrics or features
+                - Provide concrete numbers, dates, and milestones
+                - Total output should fit 12-15 PDF pages when rendered
 
-Return ONLY the JSON object with the 6 sections as keys. No markdown formatting, no code fences."""
+                Return ONLY the JSON object with the 6 sections as keys. No markdown formatting, no code fences."""
         return prompt
 
     # ---------- Bedrock Invocation with Streaming ----------
@@ -325,41 +325,41 @@ Return ONLY the JSON object with the 6 sections as keys. No markdown formatting,
         return {
             'executive_summary': f"""EXECUTIVE SUMMARY
 
-{company_name} in the {industry} sector is evaluating a GenAI-enabled operating model to address {business_problem}.
-This initiative focuses on measurable outcomes: cycle-time reduction, cost-per-transaction reduction, and quality uplift,
-while improving governance and risk posture. The recommended plan targets 12–15 months to initial value realization,
-with an executive cadence of monthly steering and quarterly value checkpoints.""",
+            {company_name} in the {industry} sector is evaluating a GenAI-enabled operating model to address {business_problem}.
+            This initiative focuses on measurable outcomes: cycle-time reduction, cost-per-transaction reduction, and quality uplift,
+            while improving governance and risk posture. The recommended plan targets 12–15 months to initial value realization,
+            with an executive cadence of monthly steering and quarterly value checkpoints.""",
 
-            'business_case_analysis': f"""BUSINESS CASE & VALUE PROPOSITION
+                        'business_case_analysis': f"""BUSINESS CASE & VALUE PROPOSITION
 
-The program quantifies benefits across throughput, quality, and costs. Assuming a {budget} investment envelope,
-the expected ROI over three years exceeds 300%, with accelerated payback once automation scales to priority workflows.
-Unit economics improve as volume grows and defect/leakage costs decline. A KPI tree links executive metrics to
-leading indicators such as first-pass yield, backlog age, and cycle time across value streams.""",
+            The program quantifies benefits across throughput, quality, and costs. Assuming a {budget} investment envelope,
+            the expected ROI over three years exceeds 300%, with accelerated payback once automation scales to priority workflows.
+            Unit economics improve as volume grows and defect/leakage costs decline. A KPI tree links executive metrics to
+            leading indicators such as first-pass yield, backlog age, and cycle time across value streams.""",
 
-            'technical_implementation_roadmap': """TECHNICAL IMPLEMENTATION ROADMAP
+                        'technical_implementation_roadmap': """TECHNICAL IMPLEMENTATION ROADMAP
 
-Delivery follows a phased roadmap: discovery & baselining (0–30 days), pilot build & data enablement (31–90 days),
-scale-out & platform hardening (91–180 days), and enterprise rollout (180–360 days). Workstreams cover data,
-model lifecycle (eval/guardrails), integration, and platform operations with a secure-by-default approach.""",
+            Delivery follows a phased roadmap: discovery & baselining (0–30 days), pilot build & data enablement (31–90 days),
+            scale-out & platform hardening (91–180 days), and enterprise rollout (180–360 days). Workstreams cover data,
+            model lifecycle (eval/guardrails), integration, and platform operations with a secure-by-default approach.""",
 
-            'financial_investment_analysis': """FINANCIAL INVESTMENT ANALYSIS
+                        'financial_investment_analysis': """FINANCIAL INVESTMENT ANALYSIS
 
-Budget considers platform subscriptions, cloud consumption, integration, change management, and enablement.
-A sensitivity analysis reflects utilization bands and workload seasonality. Assumptions include cloud credits,
-reserved capacity, and foundation investments that amortize across use cases.""",
+            Budget considers platform subscriptions, cloud consumption, integration, change management, and enablement.
+            A sensitivity analysis reflects utilization bands and workload seasonality. Assumptions include cloud credits,
+            reserved capacity, and foundation investments that amortize across use cases.""",
 
-            'risk_mitigation_strategy': """RISK MITIGATION STRATEGY
+                        'risk_mitigation_strategy': """RISK MITIGATION STRATEGY
 
-Primary risks include delivery slip, data quality, change fatigue, and model risk. Controls: gated releases,
-reference environments, backtesting, policy-as-code, and a clear RACI with escalation thresholds.
-A governance cadence enforces scope integrity and value tracking.""",
+            Primary risks include delivery slip, data quality, change fatigue, and model risk. Controls: gated releases,
+            reference environments, backtesting, policy-as-code, and a clear RACI with escalation thresholds.
+            A governance cadence enforces scope integrity and value tracking.""",
 
-            'strategic_recommendations': """STRATEGIC RECOMMENDATIONS
+                        'strategic_recommendations': """STRATEGIC RECOMMENDATIONS
 
-Establish an Executive Steering Committee and an AI Center of Excellence, align incentives to outcome KPIs,
-adopt a product operating model, and prioritize two lighthouse use cases for rapid proof of value.
-Codify learnings into standards, templates, and enablement to accelerate the portfolio."""
+            Establish an Executive Steering Committee and an AI Center of Excellence, align incentives to outcome KPIs,
+            adopt a product operating model, and prioritize two lighthouse use cases for rapid proof of value.
+            Codify learnings into standards, templates, and enablement to accelerate the portfolio."""
         }
 
     # ---------- PDF Build (same layout primitives as compliance) ----------
