@@ -9,7 +9,7 @@ import boto3
 from datetime import datetime
 import uuid
 
-from report_labs_executive import Cloud202ExecutiveReportGenerator
+from src.report_labs_executive import Cloud202ExecutiveReportGenerator
 
 
 def handler(event, context):

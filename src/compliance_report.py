@@ -6,46 +6,54 @@ Companion tool to the Executive Report Generator
 """
 
 import json
-import os
 import logging
-import boto3
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 import re
-import sys
 
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
-from reportlab.pdfgen import canvas
 
 # Import shared styling components
-from report_styles import NumberedCanvas, create_enhanced_styles
+from src.report_styles import EnhancedNumberedCanvas, create_enhanced_styles
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Import centralized Bedrock configuration
+from src.bedrock_config import BedrockConfig
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(filename)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 class ComplianceReportGenerator:
     """Generate compliance-focused assessment reports"""
 
-    def __init__(self, aws_region: str = "us-east-1"):
-        self.aws_region = aws_region
+    def __init__(self, aws_region: str = None):
+        """
+        Initialize the compliance report generator
+        
+        Args:
+            aws_region: AWS region for Bedrock (uses BedrockConfig default if None)
+        """
+        # Get region from BedrockConfig
+        self.aws_region = aws_region or BedrockConfig.get_region("compliance")
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
+        # Get inference profile ARN for direct client usage
+        self.model_id = BedrockConfig.get_inference_profile_arn(self.aws_region)
+        
+        # Log configuration
+        BedrockConfig.log_configuration("compliance", self.aws_region)
+        
         try:
-            self.bedrock_runtime = boto3.client(
-                service_name='bedrock-runtime',
-                region_name=aws_region
+            # Create Bedrock client using centralized config
+            self.bedrock_runtime = BedrockConfig.create_bedrock_client(
+                region=self.aws_region,
+                report_type="compliance"
             )
-            # Use inference profile ARN
-            self.model_id = 'arn:aws:bedrock:us-east-1:781364298443:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0'
             logger.info("✅ AWS Bedrock client initialized")
-            logger.info(f"🤖 Using model: {self.model_id}")
         except Exception as e:
             logger.warning(f"⚠️ Bedrock not available: {e}")
             self.bedrock_runtime = None
@@ -168,7 +176,7 @@ Return ONLY JSON with 4 sections. No markdown."""
         return prompt
 
     def generate_compliance_content(self, processed_data: Dict[str, Any]) -> Dict[str, str]:
-        """Generate compliance content using Bedrock"""
+        """Generate compliance content using Bedrock streaming for incremental output"""
         
         if self.bedrock_runtime:
             try:
@@ -176,27 +184,55 @@ Return ONLY JSON with 4 sections. No markdown."""
                 
                 prompt = self.create_compliance_prompt(processed_data)
                 
+                # Get token limit from BedrockConfig
+                max_tokens = BedrockConfig.get_token_limit("compliance")
+                
                 body = {
                     "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 12000,
+                    "max_tokens": max_tokens,
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.3
                 }
                 
-                response = self.bedrock_runtime.invoke_model(
+                # Stream tokens as they arrive
+                stream = self.bedrock_runtime.invoke_model_with_response_stream(
                     modelId=self.model_id,
                     body=json.dumps(body)
                 )
-                
-                response_body = json.loads(response.get('body').read())
-                content_text = response_body.get('content')[0].get('text')
-                
+
+                assembled = []
+                event_stream = stream.get("body")
+                for event in event_stream:
+                    chunk = event.get("chunk")
+                    if not chunk:
+                        continue
+                    try:
+                        payload = json.loads(chunk.get("bytes").decode("utf-8"))
+                    except Exception:
+                        payload = {"type": "text", "text": chunk.get("bytes").decode("utf-8", errors="ignore")}
+
+                    if isinstance(payload, dict):
+                        text_piece = (
+                            payload.get("delta", {}).get("text")
+                            or payload.get("text")
+                            or ""
+                        )
+                    else:
+                        text_piece = ""
+
+                    if text_piece:
+                        assembled.append(text_piece)
+                        if len(assembled) % 20 == 0:
+                            preview = text_piece.replace('\n', ' ')[:120]
+                            logger.info(f"📝 Stream fragment: {preview}")
+
+                content_text = "".join(assembled)
                 content_text = re.sub(r'```json\n?', '', content_text)
                 content_text = re.sub(r'```\n?', '', content_text)
                 content_text = content_text.strip()
-                
+
                 content = json.loads(content_text)
-                logger.info("✅ Compliance content generated")
+                logger.info("✅ Compliance content generated via streaming")
                 return content
                 
             except Exception as e:
@@ -207,19 +243,17 @@ Return ONLY JSON with 4 sections. No markdown."""
 
     def _generate_fallback_compliance_content(self, processed_data: Dict[str, Any]) -> Dict[str, str]:
         """Generate fallback compliance content"""
+        logger.info("📋 Generating fallback content for Compliance report…")
         
         company_name = processed_data.get('company_name', 'Customer')
         industry = processed_data.get('industry', 'Technology')
         
         # Determine regulations
         if 'financial' in industry.lower() or 'fintech' in industry.lower():
-            regulations = ['SOX (Sarbanes-Oxley)', 'PCI-DSS (Payment Card Industry)', 'GLBA (Gramm-Leach-Bliley)', 'GDPR']
             primary_regs = "SOX, PCI-DSS, GLBA, and GDPR"
         elif 'healthcare' in industry.lower():
-            regulations = ['HIPAA (Health Insurance Portability)', 'HITECH Act', 'GDPR']
             primary_regs = "HIPAA, HITECH, and GDPR"
         else:
-            regulations = ['GDPR', 'ISO 27001']
             primary_regs = "GDPR and ISO 27001"
         
         return {
@@ -567,61 +601,71 @@ This comprehensive regulatory roadmap provides {company_name} with clear path to
         elements.append(Spacer(1, 1.5 * inch))
         
         # Main title
-        title = Paragraph("Cloud202", styles['TitlePage'])
+        title = Paragraph("Compliance & Security<br/>Assessment Report", styles['TitleMain'])
         elements.append(title)
-        elements.append(Spacer(1, 0.2 * inch))
-        
-        # Subtitle
-        subtitle = Paragraph("Compliance & Security Solutions", styles['Subtitle'])
-        elements.append(subtitle)
-        elements.append(Spacer(1, 0.5 * inch))
-        
-        # Report type
-        report_type = Paragraph("Compliance & Security<br/>Assessment Report", styles['TitlePage'])
-        elements.append(report_type)
-        elements.append(Spacer(1, 1 * inch))
+        elements.append(Spacer(1, 0.4 * inch))
         
         # Customer name
         company_name = customer_data.get("company_name", "")
         if company_name:
-            customer_title = Paragraph(f"<b>Prepared for:</b><br/>{company_name}", styles['Subtitle'])
+            customer_title = Paragraph(f"<b>{company_name}</b>", styles['TitleSub'])
             elements.append(customer_title)
         
         elements.append(Spacer(1, 0.5 * inch))
         
-        # Details table
+        # Details table with alternating row backgrounds
         details_data = [
             ['Industry:', customer_data.get('industry', 'Technology')],
             ['Assessment Type:', 'Compliance & Security'],
             ['Assessment Date:', customer_data.get('assessment_date', datetime.now().strftime('%Y-%m-%d'))]
         ]
         
-        details_table = Table(details_data, colWidths=[2*inch, 3*inch])
+        details_table = Table(details_data, colWidths=[2.2*inch, 2.8*inch])
         details_table.setStyle(TableStyle([
             ('FONT', (0, 0), (0, -1), 'Helvetica-Bold', 11),
             ('FONT', (1, 0), (1, -1), 'Helvetica', 11),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#2d3748')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#2c5282')),
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [colors.white, colors.HexColor('#F8FAFB')]),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('LINEBELOW', (0, 0), (-1, -1), 0.5, colors.HexColor('#E0E0E0')),
         ]))
         elements.append(details_table)
         
-        elements.append(Spacer(1, 1 * inch))
+        elements.append(Spacer(1, 0.6 * inch))
         
-        # Report date
-        date_text = f"<b>Report Date:</b> {datetime.now().strftime('%B %d, %Y')}"
-        date_para = Paragraph(date_text, styles['Subtitle'])
-        elements.append(date_para)
+        # Prepared for section
+        prep_for_label = Paragraph("<b>Prepared for:</b>", styles['SectionHeading'])
+        elements.append(prep_for_label)
+        elements.append(Spacer(1, 0.08 * inch))
+        prep_for_para = Paragraph(company_name, styles['BodyTextEnhanced'])
+        elements.append(prep_for_para)
         
         elements.append(Spacer(1, 0.3 * inch))
         
+        # Prepared by section
+        prep_by_label = Paragraph("<b>Prepared by:</b>", styles['SectionHeading'])
+        elements.append(prep_by_label)
+        elements.append(Spacer(1, 0.08 * inch))
+        prep_by_para = Paragraph("Cloud202 Compliance & Security Team", styles['BodyTextEnhanced'])
+        elements.append(prep_by_para)
+        
+        elements.append(Spacer(1, 0.5 * inch))
+        
         # Confidentiality notice
-        conf_text = "<b>CONFIDENTIAL - Cloud202 Compliance & Security Assessment</b>"
-        conf_para = Paragraph(conf_text, styles['Subtitle'])
+        conf_text = f"<b>CONFIDENTIAL - {company_name} Strategic Assessment</b>"
+        conf_para = Paragraph(conf_text, styles['TitleSub'])
         elements.append(conf_para)
+        
+        elements.append(Spacer(1, 0.2 * inch))
+        
+        # Report date
+        date_para = Paragraph(
+            f"Report Generated: {datetime.now().strftime('%B %d, %Y')}",
+            styles['BodyTextEnhanced']
+        )
+        elements.append(date_para)
         
         elements.append(PageBreak())
         
@@ -646,19 +690,29 @@ This comprehensive regulatory roadmap provides {company_name} with clear path to
                 if not para:
                     continue
                 
-                # Check if it's a subsection header (starts with capital letter and ends with colon or is short)
-                if (para.endswith(':') or (len(para.split()) <= 8 and para[0].isupper())) and len(para) < 100:
+                # Skip if paragraph matches section title (avoid duplicate)
+                if para == title:
+                    continue
+                
+                # Check if it's a subsection header
+                is_subsection = para.endswith(':') or (
+                    len(para.split()) <= 8 and para[0].isupper() and len(para) < 80
+                )
+                
+                if is_subsection:
                     # Subsection heading
-                    subsection = Paragraph(para, styles['SubsectionHeading'])
+                    subsection = Paragraph(para, styles['SectionHeading'])
                     elements.append(subsection)
-                    elements.append(Spacer(1, 0.1 * inch))
+                    elements.append(Spacer(1, 0.08 * inch))
                 else:
                     # Regular paragraph
-                    paragraph = Paragraph(para, styles['BodyText'])
+                    paragraph = Paragraph(para, styles['BodyTextEnhanced'])
                     elements.append(paragraph)
-                    elements.append(Spacer(1, 0.08 * inch))
+                    elements.append(Spacer(1, 0.1 * inch))
         
-        elements.append(PageBreak())
+        # Always end with page break for dedicated pages
+        if elements and len(elements) > 2:
+            elements.append(PageBreak())
         
         return elements
         
@@ -669,9 +723,9 @@ This comprehensive regulatory roadmap provides {company_name} with clear path to
         doc = SimpleDocTemplate(
             output_path,
             pagesize=A4,
-            rightMargin=0.75 * inch,
-            leftMargin=0.75 * inch,
-            topMargin=0.75 * inch,
+            rightMargin=0.7 * inch,
+            leftMargin=0.7 * inch,
+            topMargin=0.7 * inch,
             bottomMargin=1 * inch,
             title=f"Compliance Assessment - {customer_info.get('company_name')}",
             author="Cloud202 Compliance Team"
@@ -694,10 +748,14 @@ This comprehensive regulatory roadmap provides {company_name} with clear path to
         for title, text in sections:
             elements.extend(self.create_content_section(title, text, styles))
         
-        # Build PDF with custom canvas for page numbers
+        # Build PDF with EnhancedNumberedCanvas
         def make_canvas(*args, **kwargs):
-            kwargs['report_type'] = 'Compliance & Security Assessment'
-            return NumberedCanvas(*args, **kwargs)
+            return EnhancedNumberedCanvas(
+                *args,
+                company_name=customer_info.get('company_name', 'Cloud202'),
+                report_type='Compliance & Security Assessment',
+                **kwargs
+            )
         doc.build(elements, canvasmaker=make_canvas)
         logger.info(f"✅ Compliance PDF created: {output_path}")
 
@@ -756,7 +814,7 @@ def main():
     print("="*70)
     
     try:
-        generator = ComplianceReportGenerator(aws_region="us-east-1")
+        generator = ComplianceReportGenerator()
         results = generator.generate_report()
         
         if results:

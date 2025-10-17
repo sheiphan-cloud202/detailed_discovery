@@ -37,7 +37,7 @@ echo ""
 echo "Step 2: Checking job status..."
 echo "-------------------------------------------"
 
-MAX_ATTEMPTS=40  # 40 attempts * 10 seconds = 400 seconds (6.7 minutes)
+MAX_ATTEMPTS=60  # 40 attempts * 10 seconds = 400 seconds (6.7 minutes)
 ATTEMPT=0
 
 while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
