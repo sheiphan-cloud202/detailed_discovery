@@ -1,5 +1,7 @@
-# Byte-compiled / optimized / DLL files
-__pycache__
+# =========================
+# 🐍 Python
+# =========================
+__pycache__/
 *.py[cod]
 *$py.class
 
@@ -26,11 +28,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-.cursor/
-*.pyc/
 
 # PyInstaller
-# Usually contains pyinstaller logs and spec files
 *.manifest
 *.spec
 
@@ -56,27 +55,28 @@ coverage.xml
 *.mo
 *.pot
 
-# Django stuff
+# Django
 *.log
 local_settings.py
-db.sqlite3
-db.sqlite3-journal
+db.sqlite3*
+media/
+staticfiles/
 
-# Flask stuff
+# Flask
 instance/
 .webassets-cache
 
-# Scrapy stuff
-.scrapy
+# Scrapy
+.scrapy/
 
-# Sphinx documentation
+# Sphinx
 docs/_build/
 
 # PyBuilder
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Jupyter
+.ipynb_checkpoints/
 
 # IPython
 profile_default/
@@ -91,26 +91,40 @@ ENV/
 env.bak/
 venv.bak/
 
-# VS Code / PyCharm
+# IDEs / Editors
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
 
-# macOS
-.DS_Store
-
-# mypy
+# mypy / typing
 .mypy_cache/
 .dmypy.json
 dmypy.json
-
-# Pyre type checker
 .pyre/
-
-# pytype
 .pytype/
 
-# Cython debug symbols
+# Cython
 cython_debug/
 
-# Custom
+# =========================
+# 🍎 macOS
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# =========================
+# 🧩 Custom project
+# =========================
+.cursor/
 .kiro
