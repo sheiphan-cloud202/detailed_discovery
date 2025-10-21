@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import boto3
 from datetime import datetime
 import uuid
+from decimal import Decimal
 
 # Ensure project root and src are importable
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -17,6 +18,22 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def decimal_to_number(obj):
+    """Convert DynamoDB Decimal objects to int/float for JSON serialization"""
+    if isinstance(obj, list):
+        return [decimal_to_number(i) for i in obj]
+    elif isinstance(obj, dict):
+        return {k: decimal_to_number(v) for k, v in obj.items()}
+    elif isinstance(obj, Decimal):
+        # Convert to int if it's a whole number, otherwise float
+        if obj % 1 == 0:
+            return int(obj)
+        else:
+            return float(obj)
+    else:
+        return obj
 
 
 def handler(event, context):
@@ -204,13 +221,13 @@ def handler(event, context):
         return {
             "statusCode": 500,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({
+            "body": json.dumps(decimal_to_number({
                 "message": "No reports could be uploaded",
                 "job_id": job_id,
                 "metadata": combined_results,
                 "errors": errors,
                 **({"pdf_base64": pdf_b64} if pdf_b64 else {}),
-            }),
+            })),
         }
 
     # Extract company name for folder path info using consistent extraction
@@ -227,7 +244,7 @@ def handler(event, context):
     return {
         "statusCode": 200,
         "headers": {"Content-Type": "application/json"},
-        "body": json.dumps({
+        "body": json.dumps(decimal_to_number({
             "message": "Reports generated and uploaded successfully",
             "job_id": job_id,
             "s3_folder": {
@@ -239,7 +256,7 @@ def handler(event, context):
             "s3": {k: legacy_s3[k] for k in ["bucket", "key", "presigned_url", "expires_in_seconds"]} if legacy_s3 else None,
             "s3_reports": s3_reports,
             "errors": errors
-        }),
+        })),
     }
 
 
