@@ -3,6 +3,23 @@ import json
 import uuid
 import boto3
 from datetime import datetime
+from decimal import Decimal
+
+
+def decimal_to_number(obj):
+    """Convert DynamoDB Decimal objects to int/float for JSON serialization"""
+    if isinstance(obj, list):
+        return [decimal_to_number(i) for i in obj]
+    elif isinstance(obj, dict):
+        return {k: decimal_to_number(v) for k, v in obj.items()}
+    elif isinstance(obj, Decimal):
+        # Convert to int if it's a whole number, otherwise float
+        if obj % 1 == 0:
+            return int(obj)
+        else:
+            return float(obj)
+    else:
+        return obj
 
 
 def extract_company_name(res: dict) -> str:
@@ -58,10 +75,10 @@ def handler(event, context):
             return {
                 "statusCode": 400,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
+                "body": json.dumps(decimal_to_number({
                     "error": "Missing job_id parameter",
                     "usage": "GET /?job_id=xxx"
-                })
+                }))
             }
         
         try:
@@ -72,10 +89,10 @@ def handler(event, context):
                 return {
                     "statusCode": 404,
                     "headers": {"Content-Type": "application/json"},
-                    "body": json.dumps({
+                    "body": json.dumps(decimal_to_number({
                         "error": "Job not found",
                         "job_id": job_id
-                    })
+                    }))
                 }
             
             job = response['Item']
@@ -161,7 +178,7 @@ def handler(event, context):
                 return {
                     "statusCode": 200,
                     "headers": {"Content-Type": "application/json"},
-                    "body": json.dumps(response_body)
+                    "body": json.dumps(decimal_to_number(response_body))
                 }
             
             elif status == 'FAILED':
@@ -169,7 +186,7 @@ def handler(event, context):
                 return {
                     "statusCode": 200,
                     "headers": {"Content-Type": "application/json"},
-                    "body": json.dumps(response_body)
+                    "body": json.dumps(decimal_to_number(response_body))
                 }
             
             elif status in ['PENDING', 'PROCESSING']:
@@ -177,24 +194,24 @@ def handler(event, context):
                 return {
                     "statusCode": 202,  # HTTP 202 Accepted
                     "headers": {"Content-Type": "application/json"},
-                    "body": json.dumps(response_body)
+                    "body": json.dumps(decimal_to_number(response_body))
                 }
             
             else:
                 return {
                     "statusCode": 200,
                     "headers": {"Content-Type": "application/json"},
-                    "body": json.dumps(response_body)
+                    "body": json.dumps(decimal_to_number(response_body))
                 }
         
         except Exception as e:
             return {
                 "statusCode": 500,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
+                "body": json.dumps(decimal_to_number({
                     "error": f"Failed to check job status: {str(e)}",
                     "job_id": job_id
-                })
+                }))
             }
     
     # Handle POST request - Job submission
@@ -231,22 +248,22 @@ def handler(event, context):
             return {
                 "statusCode": 202,  # HTTP 202 Accepted
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
+                "body": json.dumps(decimal_to_number({
                     "message": "Job submitted successfully",
                     "job_id": job_id,
                     "status": "PENDING",
                     "check_status_url": f"?job_id={job_id}",
                     "estimated_completion_time": "~3 minutes"
-                })
+                }))
             }
         
         except Exception as e:
             return {
                 "statusCode": 500,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
+                "body": json.dumps(decimal_to_number({
                     "error": f"Failed to submit job: {str(e)}"
-                })
+                }))
             }
     
     # Handle unsupported methods
@@ -254,8 +271,8 @@ def handler(event, context):
         return {
             "statusCode": 405,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({
+            "body": json.dumps(decimal_to_number({
                 "error": f"Method {http_method} not allowed",
                 "allowed_methods": ["GET", "POST"]
-            })
+            }))
         }
